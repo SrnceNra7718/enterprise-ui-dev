@@ -1,5 +1,21 @@
-import { render, screen } from 'test/utilities';
-import PackingList from '.';
+import { render as _render, screen, waitFor } from 'test/utilities';
+import { PackingList } from '.';
+import { createStore } from './store';
+import { Provider } from 'react-redux';
+import { PropsWithChildren } from 'react';
+
+const render: typeof _render = (Component, options) => {
+  const store = createStore;
+
+  const Wrapper = ({ children }: PropsWithChildren) => {
+    return <Provider store={store}>{children}</Provider>;
+  };
+  return _render(Component, { ...options, wrapper: Wrapper });
+};
+
+// const renderWithProvider = (ui: React.ReactElement) => {
+//   return _render(<Provider store={createStore}>{ui}</Provider>);
+// };
 
 it('renders the Packing List application', () => {
   render(<PackingList />);
@@ -10,19 +26,91 @@ it('has the correct title', async () => {
   screen.getByText('Packing List');
 });
 
-it.todo('has an input field for a new item', () => {});
+it('has an input field for a new item', () => {
+  render(<PackingList />);
+  screen.getByLabelText('New Item Name');
+});
 
-it.todo(
-  'has a "Add New Item" button that is disabled when the input is empty',
-  () => {},
-);
+it('has a "Add New Item" button that is disabled when the input is empty', () => {
+  render(<PackingList />);
+  const newItemInput = screen.getByLabelText('New Item Name');
+  const addNewItemButton = screen.getByRole('button', {
+    name: 'Add New Item',
+  });
 
-it.todo(
-  'enables the "Add New Item" button when there is text in the input field',
-  async () => {},
-);
+  expect(newItemInput).toHaveValue('');
+  expect(addNewItemButton).toBeDisabled();
+});
 
-it.todo(
-  'adds a new item to the unpacked item list when the clicking "Add New Item"',
-  async () => {},
-);
+it('enables the "Add New Item" button when there is text in the input field', async () => {
+  const { user } = render(<PackingList />);
+  const newItemInput = screen.getByLabelText<HTMLInputElement>('New Item Name');
+  const addNewItemButton = screen.getByRole('button', { name: 'Add New Item' });
+
+  await user.type(newItemInput, 'MacBook Pro');
+
+  expect(addNewItemButton).toBeEnabled();
+});
+
+it('adds a new item to the unpacked item list when the clicking "Add New Item"', async () => {
+  const { user } = render(<PackingList />);
+  const newItemInput = screen.getByLabelText<HTMLInputElement>('New Item Name');
+  const addNewItemButton = screen.getByRole<HTMLButtonElement>('button', {
+    name: 'Add New Item',
+  });
+
+  await user.type(newItemInput, 'MacBook Pro');
+  await user.click(addNewItemButton);
+
+  expect(screen.getByLabelText('MacBook Pro')).not.toBeChecked();
+});
+
+// check if the button removes the text in the input field after adding an item and disabling the button again
+it('removes an item when the remove button is clicked', async () => {
+  const { user } = render(<PackingList />);
+
+  const newItemInput = screen.getByLabelText<HTMLInputElement>('New Item Name');
+  const addNewItemButton = screen.getByRole<HTMLButtonElement>('button', {
+    name: 'Add New Item',
+  });
+
+  await user.type(newItemInput, 'iPad Pro');
+  await user.click(addNewItemButton);
+
+  const item = screen.getByLabelText('iPad Pro');
+  const removeButton = screen.getByRole('button', {
+    name: 'Remove iPad Pro',
+  });
+
+  await user.click(removeButton);
+
+  expect(item).not.toBeInTheDocument();
+});
+
+// This test is subtly flawed.
+// Check if removing an item works correctly
+it('removes an item', async () => {
+  const { user } = render(<PackingList />);
+  const newItemInput = screen.getByLabelText<HTMLInputElement>('New Item Name');
+  const addNewItemButton = screen.getByRole<HTMLButtonElement>('button', {
+    name: 'Add New Item',
+  });
+
+  await user.type(newItemInput, 'iPad Pro');
+  await user.click(addNewItemButton);
+
+  // screen.debug();
+
+  const item = screen.getByLabelText('iPad Pro');
+  const removeButton = screen.getByRole('button', {
+    name: 'Remove iPad Pro',
+  });
+
+  await user.click(removeButton);
+
+  expect(item).not.toBeInTheDocument();
+
+  waitFor(() => {
+    expect(item).not.toBeInTheDocument();
+  });
+});
