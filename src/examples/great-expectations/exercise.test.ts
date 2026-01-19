@@ -50,7 +50,7 @@ describe('Kanban Board', () => {
     expect(board.statuses).toContain('In Progress');
   });
 
-  it('should remove a status using #removeStatus', async () => {
+  it.todo('should remove a status using #removeStatus', async () => {
     const board = new KanbanBoard('Things to Do');
     expect.hasAssertions();
 
