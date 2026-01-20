@@ -10,3 +10,11 @@ it('should demonstrate this matcher`s usage', async () => {
 
   expect(results).toHaveNoViolations();
 });
+
+it('should be accessible', async () => {
+  const { container } = render(<ObstacleCourse />);
+
+  const results = await axe(container);
+
+  expect(results).toHaveNoViolations();
+});
